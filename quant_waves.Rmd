@@ -1,0 +1,88 @@
+---
+title: "Wave functions"
+author: "Christian Coffman"
+date: "October 21, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+## Taking a look at constructing different waveforms from quantum mechanics
+
+
+# 1D particle in a box
+Infinite potential at the walls
+$\psi = (2/L)^{-1/2}sin(n\pi x/L)$ 
+
+```{r echo = FALSE}
+L <- 10 # nm
+x <- seq(0, L , length.out = 50)
+n <- seq(1,5)
+qwave <- data.frame(wave = rep(n, each = length(x)) , x = rep(x, length(n)))
+qwave <- qwave %>%
+  mutate(psi = (2/L)^(1/2) * sinpi(wave * x / L))
+
+tot <- qwave %>%
+  group_by(x) %>%
+  summarize(sum = sum(psi ^ 2))
+
+ggplot(qwave, aes(x=x, y = psi, col = factor(wave))) + 
+  geom_line() +
+  guides(col = FALSE) 
+
+ggplot(qwave) +
+  geom_line(aes(x=x, y = psi^2, col = factor(wave))) + 
+  geom_area(data = tot, aes( x =x , y = sum), fill = 'orange', alpha = 0.3) +
+  guides(col = FALSE)
+
+```
+# 2d particle in a box
+```{r echo = FALSE}
+w1 <- qwave %>%
+  filter(wave == 1)
+w2 <- qwave %>%
+  filter(wave==2)
+w3 <- qwave %>%
+  filter(wave ==3)
+q2wave <- data.frame(x = rep(w1$x, length(w1$x)), y = rep(w1$x, each = length(w1$x)), one = rep(w1$psi, length(w1$psi)), one.y = rep(w1$psi, each = length(w1$psi)), two = rep(w2$psi, length(w2$psi)), two.y = rep(w2$psi, each = length(w2$psi)), three = rep(w3$psi, length(w3$psi)), three.y = rep(w3$psi, each = length(w3$psi))) %>%
+                       mutate(o.o = one * one.y, o.t = one * two.y, o.th = one * three.y, t.t = two * two.y, t.th = two * three.y, th.th = three * three.y)
+
+ggplot(q2wave, aes(x=x, y= y, z= two * one.y)) +
+  geom_contour(aes(col = stat(level))) +
+  scale_color_gradient2() +
+  guides(col = FALSE)
+```
+
+# tunneling
+```{r echo = FALSE}
+V <- 1  # Potential energy of wall
+L <- 10 # thickness of wall
+x <- seq(-50, 50, length.out = 100)
+A <- 1
+B <- 1
+k <- 
+psil <-  A * e^(complex(real = 0 , imaginary = 1) * k * x) + B * e^(complex(real = 0 , imaginary = -1) * k * x)
+```
+
+
+# Transmission probability 
+Plot the transmission porbability T against E/V for 
+For: a. electron (mass= 9.109e-31 kg)
+throug a barrier of heitht V.
+
+```{r echo = FALSE}
+me <- 9.109e-31
+mp <- 1.6726219e-27
+mh <- 1.6737236e-27
+h  <- 1.055e-34
+V <- 100
+E <- seq(0,V, length.out= 100)
+k <- ((2 * me * (V - E)) ^(-1/2))/h
+L <- 1e-20
+Tr <- (((exp(k * L) - exp(-k * L))^2)/(16*(E/V) * (1-(E/V))))^(-1)
+plot(E/V, Tr)
+```
